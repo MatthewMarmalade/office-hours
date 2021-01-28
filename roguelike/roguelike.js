@@ -59,19 +59,6 @@ const small_dungeon_map = '\
  ▔▔▔▔ \n';
 const small_dungeon = toMessage('small_dungeon', small_dungeon_map);
 
-function toSecret(map) {
-    return map.split("\n").join("n").split(empty).join("e").split("|").join("v").split("▔").join("h").split("@").join("p");
-}
-
-function fromSecret(map) {
-    return map.split("n").join("\n").split("e").join(empty).split("v").join("|").split("h").join("▔").split("p").join("@");
-}
-
-function toMessage(name, map) {
-    const secret = 'name.' + name + '-map.' + toSecret(map) + '\n';
-    return graves + secret + graves;
-}
-
 var target = null;
 var main_map = null;
 const playerChar = '@';
@@ -80,7 +67,19 @@ var maps = {}
 maps['small_dungeon'] = small_dungeon;
 maps['large_dungeon'] = large_dungeon;
 
-//A Map needs a grid, a border, a title...
+function toSecret(map) {
+    return map.split("\n").join("n").split(' ').join("e").split("|").join("v").split("▔").join("h").split("@").join("p");
+}
+
+function fromSecret(map) {
+    return map.split("n").join("\n").split("e").join(' ').split("v").join("|").split("h").join("▔").split("p").join("@");
+}
+
+function toMessage(name, map) {
+    const secret = 'name.' + name + '-map.' + toSecret(map) + '\n';
+    return graves + secret + graves;
+}
+
 class Map {
     constructor() {
         //this.name = name;
@@ -228,8 +227,8 @@ bot.once('ready', () => {
     //console.log("Converted back to text:\n" + map.toText());
     //console.log(small_dungeon);
     main_map = new Map();
-    main_map.fromText(small_dungeon);
-    console.log("Converted back to text:\n" + main_map.toText());
+    //main_map.fromText(small_dungeon);
+    //console.log("Converted back to text:\n" + main_map.toText());
 })
 
 bot.on('message', message => {
@@ -260,7 +259,11 @@ bot.on('message', message => {
                 }
                 channel.send(main_map.toText())
                     .then(map => target = map)
-                    .then(map => console.log("New Map: " + main_map.name))
+                    .then(() => target.react('⬆'))
+                    .then(() => target.react('⬇️'))
+                    .then(() => target.react('⬅️'))
+                    .then(() => target.react('➡'))
+                    .then(() => console.log("New Map: " + main_map.name))
                     .catch(console.error);
             }
             break;
@@ -310,7 +313,13 @@ bot.on('message', message => {
             break;
         case 'delete':
             if (target == null) {
-                console.log('ERROR: delete called without target set! do nothing');
+                if (message.reference != null) {
+                    channel.messages.fetch(message.reference.messageID)
+                        .then(reply => reply.delete())
+                        .catch(console.error);
+                } else {
+                    //console.log('ERROR: delete called without target set! do nothing');
+                }
             } else {
                 target.delete()
                     .then(deleted => console.log('Map Deleted: ' + deleted.content))
@@ -324,6 +333,61 @@ bot.on('message', message => {
             break;
     }
     message.delete();
+})
+
+bot.on('messageReactionAdd', (reaction, user) => {
+    //console.log(reaction._emoji.name);
+    if (reaction.message == target && !user.bot) {
+        switch (reaction._emoji.name) {
+            case '⬆':
+                if (target == null) {
+                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
+                } else {
+                    const success = main_map.playerW();
+                    if (success) {
+                        target.edit(main_map.toText())
+                            .catch(console.error);
+                    }
+                }
+                break;
+            case '⬇️':
+                if (target == null) {
+                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
+                } else {
+                    const success = main_map.playerS();
+                    if (success) {
+                        target.edit(main_map.toText())
+                            .catch(console.error);
+                    }
+                }
+                break;
+            case '⬅️':
+                if (target == null) {
+                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
+                } else {
+                    const success = main_map.playerA();
+                    if (success) {
+                        target.edit(main_map.toText())
+                            .catch(console.error);
+                    }
+                }
+                break;
+            case '➡':
+                if (target == null) {
+                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
+                } else {
+                    const success = main_map.playerD();
+                    if (success) {
+                        target.edit(main_map.toText())
+                            .catch(console.error);
+                    }
+                }
+                break;
+            default:
+                console.log("ERROR: Unknown Reaction: " + reaction._emoji.name); break;
+        }
+        reaction.users.remove(user.id);
+    }
 })
 
 bot.login(config.token);
