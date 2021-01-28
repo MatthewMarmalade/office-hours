@@ -2,8 +2,6 @@ const Discord = require("discord.js");
 const config = require("./config.json");
 const bot = new Discord.Client();
 
-//const token = 'ODA0NDA5MDU5MDkxNjc3MjE1.YBL6UA.HlnTcZlc-5PYq3KnypDr8yoU7Sc';
-
 bot.once('ready', () => {
 	console.log('Map-Bot Logged In And Ready!');
 })
