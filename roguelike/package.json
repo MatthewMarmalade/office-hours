@@ -1,11 +1,11 @@
 {
   "name": "roguelike",
   "version": "1.0.0",
-  "description": "",
+  "description": "Unicode roguelike game; test of office-hours map engine.",
   "main": "roguelike.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "Matthew Marsland",
+  "license": "BSD-3"
 }
