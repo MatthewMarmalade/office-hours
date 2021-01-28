@@ -24,6 +24,6 @@ Put informally: A Discord bot that lets you play small 2d games in an ASCII art 
 - ~~Grid management system: coordinates within the world, mapped back and forth between the textual representation.~~
 - Automatic re-copying; active map should be loaded into the first slot.
 - ~~Command management (there are probably going to be a lot)~~
-- Fog of War: Post grid-management system; separate true grid from render without loss of data.
-- Test emoji reactions to submit commands as a potentially faster/cleaner system. Might have more edge cases though.
+- ~~Fog of War: Post grid-management system; separate true grid from render without loss of data.~~
+- ~~Test emoji reactions to submit commands as a potentially faster/cleaner system. Might have more edge cases though.~~
 - Current Push Goal: Roguelike! Uses grid management, uses fog of war, seeded world generation, single-direction traversal of 'levels', class specializations, items, visible rng, basic combat/movement, superhot rules to deal with latency. Naming characters, inventory.
