@@ -2,6 +2,7 @@ const Discord = require("discord.js");
 const config = require("./config.json");
 const bot = new Discord.Client();
 
+const graves = '```';
 const large_blank = '```large_blank\n\
  _____________________________________________________________\n\
 |                                                             |\n\
@@ -26,7 +27,7 @@ const large_blank = '```large_blank\n\
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n\
 ```';
 
-const large_dungeon = '```large_dungeon\n\
+const large_dungeon_map = '\
  _____________________________________________________________ \n\
 |                                      ____________           |\n\
 |                                     |            |          |\n\
@@ -47,16 +48,29 @@ const large_dungeon = '```large_dungeon\n\
 |                 | |_________|                   |           |\n\
 |                 |                               |           |\n\
 |                  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔            |\n\
- ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n\
-```';
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n';
+const large_dungeon = toMessage('large_dungeon', large_dungeon_map);
 
-const small_dungeon = '```small_dungeon\n\
+const small_dungeon_map = '\
  ____ \n\
 |    |\n\
 |  @ |\n\
 |    |\n\
- ▔▔▔▔ \n\
-```'
+ ▔▔▔▔ \n';
+const small_dungeon = toMessage('small_dungeon', small_dungeon_map);
+
+function toSecret(map) {
+    return map.split("\n").join("n").split(" ").join("s").split("|").join("v").split("▔").join("h").split("@").join("p");
+}
+
+function fromSecret(map) {
+    return map.split("n").join("\n").split("s").join(" ").split("v").join("|").split("h").join("▔").split("p").join("@");
+}
+
+function toMessage(name, map) {
+    const secret = 'name.' + name + '-map.' + toSecret(map) + '\n';
+    return graves + secret + graves;
+}
 
 var target = null;
 var main_map = null;
@@ -78,16 +92,40 @@ class Map {
         //find everything before the first newline => secret information
         //everything else until the last three backticks => the grid
         //done!
+        console.log("LOADING NEW MAP");
         const no_graves = text.split('```');
-        if (no_graves.length != 3) return;
-        var rows = no_graves[1].split('\n');
-        this.secret = rows.shift();
-        this.name = this.secret; //Temporary!
-        rows = rows.slice(0,rows.length);
+        if (no_graves.length != 3) {
+            console.log('Incorrect grave wrapping.'); 
+            return;
+        }
+        this.secret = no_graves[1].split('\n')[0];
+        var secrets = this.secret.split('-');
+        var s;
+        var rows;
+        for (var i = 0; i < secrets.length; i++) {
+            s = secrets[i].split('.');
+            switch (s[0]) {
+            case 'name':
+                this.name = s[1]; 
+                console.log("Map Name: " + this.name); break;
+            case 'map':
+                console.log("Map Secret: " + s[1]);
+                this.grid = this.secretToGrid(s[1]); break;
+            default:
+                console.log('ERROR: Unknown secret: ' + s); break;
+            }
+        }
+        
+        console.log("Final Grid: " + this.grid);
+        console.log("MAP LOADED")
+    }
+    secretToGrid(secret) {
+        var rows = fromSecret(secret).split('\n');
         var char;
         var length;
         this.height = rows.length;
         this.width = rows[0].length;
+        console.log("Map Height: " + this.height + ", Map Width: " + this.width);
         var grid = [];
         for (var i = 0; i < rows.length-1; i++) {
             grid[i] = rows[i].split('');
@@ -95,26 +133,49 @@ class Map {
                 console.log("Row " + i + " width: " + rows[i].length + " != " + this.width);
                 return;
             }
+            //console.log("Row " + i + ": " + grid[i]);
             for (var j = 0; j < grid[i].length; j++) {
                 //passing over every character...
                 char = grid[i][j];
                 if (char == playerChar) {
                     this.playerX = j;
                     this.playerY = i;
+                    console.log("Player Found At: (" + this.playerX + "," + this.playerY + ")");
                 }
             }
         }
-        this.grid = grid;
-        console.log("Map " + this.name + " Loaded With: {\nsecret=" + this.secret + ",\nplayer=(" + this.playerX + "," + this.playerY + "),\nheight=" + this.height + ", width=" + this.width + "\ngrid=" + this.grid + "}");
+        return grid;
     }
-    toText() {
-        //Reconstructs the map into a piece of text that can be sent using the bot.
+    gridToSecret() {
         var rows = [];
         for (var row = 0; row < this.grid.length; row++) {
             rows[row] = this.grid[row].join('');
         }
-        var text = rows.join('\n');
-        return '```' + this.secret + '\n' + text + '\n```';
+        var text = rows.join('\n') + '\n';
+        return toSecret(text);
+    }
+    toText() {
+        //Reconstructs the map into a piece of text that can be sent using the bot.
+        const visible = this.visibleMap();
+        const secret = 'name.' + this.name + '-map.' + this.gridToSecret() + '\n';
+        const final = this.name + '\n' + graves + secret + visible + graves;
+        //console.log("Final Output: " + final);
+        return final;
+    }
+    visibleMap() {
+        if (this.fog == null) this.fog = 3;
+        const fogX = Math.floor(this.fog * 2);           //Adjusted because char height > width
+        const minY = Math.max(0,this.playerY-this.fog);
+        const maxY = Math.min(this.playerY+this.fog+1,this.height);
+        const minX = Math.max(0,this.playerX-fogX);
+        const maxX = Math.min(this.playerX+fogX+1,this.width);
+        var rows = [];
+        var visibleRows = this.grid.slice(minY, maxY);
+        for (var row = 0; row < visibleRows.length; row++) {
+            var visibleCols = visibleRows[row].slice(minX, maxX);
+            rows[row] = visibleCols.join('');
+        }
+        return rows.join('\n') + '\n';
     }
     playerW() {
         if (this.grid[this.playerY-1][this.playerX] == empty) {
@@ -165,7 +226,10 @@ bot.once('ready', () => {
     //map = new Map('test');
     //map.fromText(large_dungeon);
     //console.log("Converted back to text:\n" + map.toText());
+    //console.log(small_dungeon);
     main_map = new Map();
+    main_map.fromText(small_dungeon);
+    console.log("Converted back to text:\n" + main_map.toText());
 })
 
 bot.on('message', message => {
