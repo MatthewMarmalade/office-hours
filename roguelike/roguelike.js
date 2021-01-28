@@ -60,11 +60,11 @@ const small_dungeon_map = '\
 const small_dungeon = toMessage('small_dungeon', small_dungeon_map);
 
 function toSecret(map) {
-    return map.split("\n").join("n").split(" ").join("s").split("|").join("v").split("▔").join("h").split("@").join("p");
+    return map.split("\n").join("n").split(empty).join("e").split("|").join("v").split("▔").join("h").split("@").join("p");
 }
 
 function fromSecret(map) {
-    return map.split("n").join("\n").split("s").join(" ").split("v").join("|").split("h").join("▔").split("p").join("@");
+    return map.split("n").join("\n").split("e").join(empty).split("v").join("|").split("h").join("▔").split("p").join("@");
 }
 
 function toMessage(name, map) {
