@@ -3,8 +3,16 @@ const config = require("./config.json");
 const bot = new Discord.Client();
 
 const graves = '```';
-const large_blank = '```large_blank\n\
- _____________________________________________________________\n\
+const padding = '\n\nControls:';
+var target = null;
+var main_map = null;
+const playerChar = ['▲','◀','▼','▶'];
+const empty = ' ';
+const stone = '█';
+
+
+const large_blank = '\
+ _____________________________________________________________ \n\
 |                                                             |\n\
 |                                                             |\n\
 |                                                             |\n\
@@ -24,8 +32,55 @@ const large_blank = '```large_blank\n\
 |                                                             |\n\
 |                                                             |\n\
 |                                                             |\n\
- ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔\n\
-```';
+ ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n';
+
+const sixteen_blank = '\
+  ______________________________  \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
+
+const sixteen_mining = '\
+  ______________________________  \n\
+ |                              | \n\
+ |       █                      | \n\
+ |                          █   | \n\
+ |                              | \n\
+ |                              | \n\
+ |                              | \n\
+ |                    █         | \n\
+ |                              | \n\
+ |     █                        | \n\
+ |                              | \n\
+ |                              | \n\
+ |                    █         | \n\
+ |                              | \n\
+ |        █                     | \n\
+ |                              | \n\
+ |                              | \n\
+  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
+
+const small_house = '\
+  ________  \n\
+ |████████| \n\
+ |██░░░░██| \n\
+ |██░░@1██| \n\
+ |█████▤██| \n\
+  ▔▔▔▔▔▔▔▔  \n';
 
 const large_dungeon_map = '\
  _____________________________________________________________ \n\
@@ -54,30 +109,34 @@ const large_dungeon = toMessage('large_dungeon', large_dungeon_map);
 const small_dungeon_map = '\
  ____ \n\
 |    |\n\
-|  @ |\n\
+|  ▶ |\n\
 |    |\n\
  ▔▔▔▔ \n';
 const small_dungeon = toMessage('small_dungeon', small_dungeon_map);
 
-var target = null;
-var main_map = null;
-const playerChar = '@';
-const empty = ' ';
 var maps = {}
 maps['small_dungeon'] = small_dungeon;
 maps['large_dungeon'] = large_dungeon;
 
 function toSecret(map) {
-    return map.split("\n").join("n").split(' ').join("e").split("|").join("v").split("▔").join("h").split("@").join("p");
+    const whitespace = map.split("\n").join("n").split(empty).join("e");
+    const walls = whitespace.split("|").join("v").split("▔").join("h");
+    const blocks = walls.split(stone).join("b");
+    const players = blocks.split("▲").join("w").split("◀").join("a").split("▼").join("s").split("▶").join("d");
+    return players;
 }
 
 function fromSecret(map) {
-    return map.split("n").join("\n").split("e").join(' ').split("v").join("|").split("h").join("▔").split("p").join("@");
+    const whitespace = map.split("n").join("\n").split("e").join(empty);
+    const walls = whitespace.split("v").join("|").split("h").join("▔");
+    const blocks = walls.split("b").join(stone);
+    const players = blocks.split("w").join("▲").split("a").join("◀").split("s").join("▼").split("d").join("▶");
+    return players;
 }
 
 function toMessage(name, map) {
     const secret = 'name.' + name + '-map.' + toSecret(map) + '\n';
-    return graves + secret + graves;
+    return graves + secret + graves + padding;
 }
 
 class Map {
@@ -115,7 +174,7 @@ class Map {
             }
         }
         
-        console.log("Final Grid: " + this.grid);
+        console.log("Final Grid: " + this.grid.grid);
         console.log("MAP LOADED")
     }
     secretToGrid(secret) {
@@ -136,19 +195,19 @@ class Map {
             for (var j = 0; j < grid[i].length; j++) {
                 //passing over every character...
                 char = grid[i][j];
-                if (char == playerChar) {
-                    this.playerX = j;
-                    this.playerY = i;
-                    console.log("Player Found At: (" + this.playerX + "," + this.playerY + ")");
+                if (char == playerChar[3]) {
+                    this.player = new Player(j, i, char, "Unnamed Player");
+                    console.log("Player '" + this.player.name + "'' Found At: (" + this.player.x + "," + this.player.y + ")");
                 }
             }
         }
-        return grid;
+        return new Grid(grid, this.height, this.width);
     }
     gridToSecret() {
         var rows = [];
-        for (var row = 0; row < this.grid.length; row++) {
-            rows[row] = this.grid[row].join('');
+        var grid = this.grid.grid;
+        for (var row = 0; row < grid.length; row++) {
+            rows[row] = grid[row].join('');
         }
         var text = rows.join('\n') + '\n';
         return toSecret(text);
@@ -157,19 +216,19 @@ class Map {
         //Reconstructs the map into a piece of text that can be sent using the bot.
         const visible = this.visibleMap();
         const secret = 'name.' + this.name + '-map.' + this.gridToSecret() + '\n';
-        const final = this.name + '\n' + graves + secret + visible + graves;
-        //console.log("Final Output: " + final);
+        const final = this.name + '\n' + graves + secret + visible + graves + padding;
+        console.log("Final Output: " + final);
         return final;
     }
     visibleMap() {
         if (this.fog == null) this.fog = 3;
         const fogX = Math.floor(this.fog * 2);           //Adjusted because char height > width
-        const minY = Math.max(0,this.playerY-this.fog);
-        const maxY = Math.min(this.playerY+this.fog+1,this.height);
-        const minX = Math.max(0,this.playerX-fogX);
-        const maxX = Math.min(this.playerX+fogX+1,this.width);
+        const minY = Math.max(0,this.player.y-this.fog);
+        const maxY = Math.min(this.player.y+this.fog+1,this.height);
+        const minX = Math.max(0,this.player.x-fogX);
+        const maxX = Math.min(this.player.x+fogX+1,this.width);
         var rows = [];
-        var visibleRows = this.grid.slice(minY, maxY);
+        var visibleRows = this.grid.grid.slice(minY, maxY);
         for (var row = 0; row < visibleRows.length; row++) {
             var visibleCols = visibleRows[row].slice(minX, maxX);
             rows[row] = visibleCols.join('');
@@ -177,44 +236,92 @@ class Map {
         return rows.join('\n') + '\n';
     }
     playerW() {
-        if (this.grid[this.playerY-1][this.playerX] == empty) {
-            this.grid[this.playerY-1][this.playerX] = playerChar;
-            this.grid[this.playerY][this.playerX] = empty;
-            this.playerY -= 1;
-            return true;
-        } else {
-            return false;
-        }
+        this.player.move(this.grid, playerChar[0]);
     }
     playerA() {
-        if (this.grid[this.playerY][this.playerX-1] == empty) {
-            this.grid[this.playerY][this.playerX-1] = playerChar;
-            this.grid[this.playerY][this.playerX] = empty;
-            this.playerX -= 1;
-            return true;
-        } else {
-            return false;
-        }
+        this.player.move(this.grid, playerChar[1]);
     }
     playerS() {
-        if (this.grid[this.playerY+1][this.playerX] == empty) {
-            this.grid[this.playerY+1][this.playerX] = playerChar;
-            this.grid[this.playerY][this.playerX] = empty;
-            this.playerY += 1;
-            return true;
-        } else {
-            return false;
-        }
+        this.player.move(this.grid, playerChar[2]);
     }
     playerD() {
-        if (this.grid[this.playerY][this.playerX+1] == empty) {
-            this.grid[this.playerY][this.playerX+1] = playerChar;
-            this.grid[this.playerY][this.playerX] = empty;
-            this.playerX += 1;
-            return true;
-        } else {
-            return false
+        this.player.move(this.grid, playerChar[3]);
+    }
+    playerMine() {
+        if (this.grid.getTarget(this.player) == stone) {
+            this.grid.setTarget(this.player, empty);
         }
+    }
+    playerBuild() {
+        if (this.grid.getTarget(this.player) == empty) {
+            this.grid.setTarget(this.player, stone);
+        }
+    }
+}
+
+class Grid {
+    constructor(grid, height, width) {
+        this.grid = grid;
+        this.height = height;
+        this.width = width;
+    }
+    getBlock(x,y) {
+        if (x >= 0 && y >= 0 && x <= this.width+1 && y <= this.height+1) {
+            return this.grid[y][x];
+        }
+    }
+    setBlock(x,y,char) {
+        if (x >= 0 && y >= 0 && x <= this.width+1 && y <= this.height+1) {
+            this.grid[y][x] = char;
+        }
+    }
+    getTarget(player) {
+        const x = player.targetX(); const y = player.targetY();
+        return this.getBlock(x,y);
+    }
+    setTarget(player, char) {
+        const x = player.targetX(); const y = player.targetY();
+        this.setBlock(x, y, char);
+    }
+}
+
+class Player {
+    constructor(x, y, char, name) {
+        this.x = x; this.y = y; this.char = char; this.name = name;
+    }
+    facing(char) {
+        return char == this.char;
+    }
+    targetX() {
+        if (this.char == playerChar[1]) {
+            return this.x - 1;
+        } else if (this.char == playerChar[3]) {
+            return this.x + 1;
+        } else {
+            return this.x;
+        }
+    }
+    targetY() {
+        if (this.char == playerChar[0]) {
+            return this.y - 1;
+        } else if (this.char == playerChar[2]) {
+            return this.y + 1;
+        } else {
+            return this.y;
+        }
+    }
+    move(grid, dir) {
+        if (this.facing(dir)) {
+            if (grid.getTarget(this) == empty) {
+                grid.setTarget(this,this.char);
+                grid.setBlock(this.x,this.y,empty);
+                this.x = this.targetX(); this.y = this.targetY();
+            }
+        } else {
+            this.char = dir;
+            grid.setBlock(this.x,this.y,dir);
+        }
+        //console.log('Player: ' + this.name + ' Going: ' + dir + ' Results: ' + grid.gridToSecret());
     }
 }
 
@@ -263,6 +370,8 @@ bot.on('message', message => {
                     .then(() => target.react('⬇️'))
                     .then(() => target.react('⬅️'))
                     .then(() => target.react('➡'))
+                    .then(() => target.react('⛏️'))
+                    .then(() => target.react('◼️'))
                     .then(() => console.log("New Map: " + main_map.name))
                     .catch(console.error);
             }
@@ -271,46 +380,34 @@ bot.on('message', message => {
             if (target == null) {
                 console.log('ERROR: Command ' + command + ' called without target set!');
             } else {
-                const success = main_map.playerW();
-                if (success) {
-                    target.edit(main_map.toText())
-                        .catch(console.error);
-                }
-            }
-            break;
+                main_map.playerW();
+                target.edit(main_map.toText())
+                    .catch(console.error);
+            } break;
         case 'a':
             if (target == null) {
                 console.log('ERROR: Command ' + command + ' called without target set!');
             } else {
-                const success = main_map.playerA();
-                if (success) {
-                    target.edit(main_map.toText())
-                        .catch(console.error);
-                }
-            }
-            break;
+                main_map.playerA();
+                target.edit(main_map.toText())
+                    .catch(console.error);
+            } break;
         case 's':
             if (target == null) {
                 console.log('ERROR: Command ' + command + ' called without target set!');
             } else {
-                const success = main_map.playerS();
-                if (success) {
-                    target.edit(main_map.toText())
-                        .catch(console.error);
-                }
-            }
-            break;
+                main_map.playerS();
+                target.edit(main_map.toText())
+                    .catch(console.error);
+            } break;
         case 'd':
             if (target == null) {
                 console.log('ERROR: Command ' + command + ' called without target set!');
             } else {
-                const success = main_map.playerD();
-                if (success) {
-                    target.edit(main_map.toText())
-                        .catch(console.error);
-                }
-            }
-            break;
+                main_map.playerD();
+                target.edit(main_map.toText())
+                    .catch(console.error);
+            } break;
         case 'delete':
             if (target == null) {
                 if (message.reference != null) {
@@ -318,7 +415,7 @@ bot.on('message', message => {
                         .then(reply => reply.delete())
                         .catch(console.error);
                 } else {
-                    //console.log('ERROR: delete called without target set! do nothing');
+                    console.log('ERROR: delete called without target set! do nothing');
                 }
             } else {
                 target.delete()
@@ -338,54 +435,22 @@ bot.on('message', message => {
 bot.on('messageReactionAdd', (reaction, user) => {
     //console.log(reaction._emoji.name);
     if (reaction.message == target && !user.bot) {
+        if (target == null) {
+            console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
+            return;
+        }
         switch (reaction._emoji.name) {
-            case '⬆':
-                if (target == null) {
-                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
-                } else {
-                    const success = main_map.playerW();
-                    if (success) {
-                        target.edit(main_map.toText())
-                            .catch(console.error);
-                    }
-                }
-                break;
-            case '⬇️':
-                if (target == null) {
-                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
-                } else {
-                    const success = main_map.playerS();
-                    if (success) {
-                        target.edit(main_map.toText())
-                            .catch(console.error);
-                    }
-                }
-                break;
-            case '⬅️':
-                if (target == null) {
-                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
-                } else {
-                    const success = main_map.playerA();
-                    if (success) {
-                        target.edit(main_map.toText())
-                            .catch(console.error);
-                    }
-                }
-                break;
-            case '➡':
-                if (target == null) {
-                    console.log('ERROR: Emoji ' + reaction._emoji.name + ' reacted without target set!');
-                } else {
-                    const success = main_map.playerD();
-                    if (success) {
-                        target.edit(main_map.toText())
-                            .catch(console.error);
-                    }
-                }
-                break;
+            case '⬆': main_map.playerW(); break;
+            case '⬇️': main_map.playerS(); break;
+            case '⬅️': main_map.playerA(); break;
+            case '➡': main_map.playerD(); break;
+            case '⛏️': main_map.playerMine(); break;
+            case '◼️': main_map.playerBuild(); break;
             default:
                 console.log("ERROR: Unknown Reaction: " + reaction._emoji.name); break;
         }
+        target.edit(main_map.toText())
+            .catch(console.error);
         reaction.users.remove(user.id);
     }
 })
