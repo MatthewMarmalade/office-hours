@@ -3,12 +3,13 @@ const config = require("./config.json");
 const bot = new Discord.Client();
 
 const graves = '```';
-const padding = '\n\nControls:';
+const padding = '\n\n\nControls:';
 var target = null;
 var main_map = null;
 const playerChar = ['▲','◀','▼','▶'];
 const empty = ' ';
 const stone = '█';
+const standard_inventory = 'Actions: **100** | Pickaxe: **64** | Potatoes: **8** | Stone: **0** | Wood: **0** | Iron: **0** | ';
 
 
 const large_blank = '\
@@ -53,28 +54,28 @@ const sixteen_blank_map = '\
  |                              | \n\
  |                              | \n\
   ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
-const sixteen_blank = toMessage('sixteen_blank', sixteen_blank_map);
+const sixteen_blank = toMessage('sixteen_blank', sixteen_blank_map, 6);
 
 const sixteen_mining_map = '\
   ______________________________  \n\
  |                              | \n\
  |       █                      | \n\
- |                          █   | \n\
- |                              | \n\
+ |                ███       █   | \n\
+ |    █          ███            | \n\
  |                              | \n\
  |          ▶                   | \n\
  |                    █         | \n\
- |                              | \n\
- |     █                        | \n\
- |                              | \n\
- |                              | \n\
- |                    █         | \n\
- |                              | \n\
+ | █                            | \n\
+ |     █          █             | \n\
+ |      ██           ██         | \n\
+ |               █              | \n\
+ |                    █     █   | \n\
+ |                         ███  | \n\
  |        █                     | \n\
- |                              | \n\
+ |             █      █         | \n\
  |                              | \n\
   ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
-const sixteen_mining = toMessage('sixteen_mining', sixteen_mining_map);
+const sixteen_mining = toMessage('sixteen_mining', sixteen_mining_map, 6);
 
 const small_house_map = '\
   ________  \n\
@@ -106,7 +107,7 @@ const large_dungeon_map = '\
 |                 |                               |           |\n\
 |                  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔            |\n\
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n';
-const large_dungeon = toMessage('large_dungeon', large_dungeon_map);
+const large_dungeon = toMessage('large_dungeon', large_dungeon_map, 4);
 
 const small_dungeon_map = '\
  ____ \n\
@@ -114,12 +115,13 @@ const small_dungeon_map = '\
 |  ▶ |\n\
 |    |\n\
  ▔▔▔▔ \n';
-const small_dungeon = toMessage('small_dungeon', small_dungeon_map);
+const small_dungeon = toMessage('small_dungeon', small_dungeon_map, 3);
 
 var maps = {}
 maps['small_dungeon'] = small_dungeon;
 maps['large_dungeon'] = large_dungeon;
 maps['16_blank'] = sixteen_blank;
+maps['16_mining'] = sixteen_mining;
 
 function toSecret(map) {
     const whitespace = map.split("\n").join("n").split(empty).join("e");
@@ -137,9 +139,9 @@ function fromSecret(map) {
     return players;
 }
 
-function toMessage(name, map) {
-    const secret = 'name.' + name + '-map.' + toSecret(map) + '\n';
-    return graves + secret + graves + padding;
+function toMessage(name, map, fog) {
+    const secret = 'name.' + name + '-fog.' + fog + '-map.' + toSecret(map) + '\n';
+    return graves + secret + graves + standard_inventory;
 }
 
 class Map {
@@ -159,6 +161,7 @@ class Map {
             console.log('Incorrect grave wrapping.'); 
             return;
         }
+        this.inventory = new Inventory(no_graves[2]);
         this.secret = no_graves[1].split('\n')[0];
         var secrets = this.secret.split('-');
         var s;
@@ -167,11 +170,14 @@ class Map {
             s = secrets[i].split('.');
             switch (s[0]) {
             case 'name':
-                this.name = s[1]; 
-                console.log("Map Name: " + this.name); break;
+                console.log("Map Name: " + s[1]);
+                this.name = s[1]; break;
             case 'map':
-                console.log("Map Secret: " + s[1]);
+                console.log("Map Map: " + s[1]);
                 this.grid = this.secretToGrid(s[1]); break;
+            case 'fog':
+                console.log("Map Fog: " + s[1]);
+                this.fog = s[1]; break;
             default:
                 console.log('ERROR: Unknown secret: ' + s); break;
             }
@@ -199,7 +205,7 @@ class Map {
                 //passing over every character...
                 char = grid[i][j];
                 if (playerChar.includes(char)) {
-                    this.player = new Player(j, i, char, "Unnamed Player");
+                    this.player = new Player(j, i, char, "Unnamed Player", this.inventory);
                     console.log("Player '" + this.player.name + "'' Found At: (" + this.player.x + "," + this.player.y + ")");
                 }
             }
@@ -219,7 +225,7 @@ class Map {
         //Reconstructs the map into a piece of text that can be sent using the bot.
         const visible = this.visibleMap();
         const secret = 'name.' + this.name + '-map.' + this.gridToSecret() + '\n';
-        const final = this.name + '\n' + graves + secret + visible + graves + padding;
+        const final = this.name + '\n' + graves + secret + visible + graves + this.inventory.toText() + padding;
         //console.log("LOG: toText Complete. Characters: " + final.length);
         return final;
     }
@@ -251,14 +257,10 @@ class Map {
         this.player.move(this.grid, playerChar[3]);
     }
     playerMine() {
-        if (this.grid.getTarget(this.player) == stone) {
-            this.grid.setTarget(this.player, empty);
-        }
+        this.player.mine(this.grid);
     }
     playerBuild() {
-        if (this.grid.getTarget(this.player) == empty) {
-            this.grid.setTarget(this.player, stone);
-        }
+        this.player.build(this.grid);
     }
 }
 
@@ -289,8 +291,8 @@ class Grid {
 }
 
 class Player {
-    constructor(x, y, char, name) {
-        this.x = x; this.y = y; this.char = char; this.name = name;
+    constructor(x, y, char, name, inventory) {
+        this.x = x; this.y = y; this.char = char; this.name = name; this.inventory = inventory;
     }
     facing(char) {
         return char == this.char;
@@ -316,15 +318,97 @@ class Player {
     move(grid, dir) {
         if (this.facing(dir)) {
             if (grid.getTarget(this) == empty) {
-                grid.setTarget(this,this.char);
-                grid.setBlock(this.x,this.y,empty);
-                this.x = this.targetX(); this.y = this.targetY();
+                if (this.inventory.enough('Actions',1)) {
+                    grid.setTarget(this,this.char);
+                    grid.setBlock(this.x,this.y,empty);
+                    this.x = this.targetX(); this.y = this.targetY();
+                    this.inventory.addAmount('Actions',-1);
+                }
             }
         } else {
             this.char = dir;
             grid.setBlock(this.x,this.y,dir);
         }
         //console.log('Player: ' + this.name + ' Going: ' + dir + ' Results: ' + grid.gridToSecret());
+    }
+    mine(grid) {
+        if (grid.getTarget(this) == stone) {
+            if (this.inventory.enough('Actions',1) && this.inventory.enough('Pickaxe',1)) {
+                grid.setTarget(this, empty);
+                this.inventory.addAmount('Actions',-1);
+                this.inventory.addAmount('Pickaxe',-1);
+                this.inventory.addAmount('Stone',1);
+            }
+        }
+    }
+    build(grid) {
+        if (grid.getTarget(this) == empty) {
+            if (this.inventory.enough('Actions',1) && this.inventory.enough('Stone',1)) {
+                grid.setTarget(this, stone);
+                this.inventory.addAmount('Actions',-1);
+                this.inventory.addAmount('Stone',-1);
+                this.inventory.addAmount('Pickaxe',1);
+            }
+        }
+    }
+}
+
+class Inventory {
+    constructor(inventory) {
+        if (inventory != '') {
+            var items = inventory.split('** | ');
+            items = items.slice(0,items.length-1);
+            console.log('TEST: Items: ' + items);
+            var map = {};
+            for (var i = 0; i < items.length; i++) {
+                const item = items[i].split(': **');
+                map[item[0]] = Number(item[1]);
+            }
+            this.map = map;
+            console.log("LOG: New Inventory: ");
+            console.log(map);
+        } else {
+            console.log("ERROR: Inventory cannot be loaded.");
+            this.map = null;
+        }
+    }
+    toText() {
+        //console.log("LOG: toText called. Map: " + this.map);
+        var text = [];
+        if (this.map != null) {
+            for (var name in this.map) {
+                text.push(name + ': **' + String(this.map[name]));
+            }
+            return text.join('** | ') + '** | ';
+        } else {
+            console.log("ERROR: Inventory not loaded.");
+            return '';
+        }
+    }
+    getAmount(item_name) {
+        if (this.map[item_name] != null) {
+            return this.map[item_name];
+        } else {
+            console.log("ERROR: '" + item_name + "' is not a valid item name.");
+            return 0;
+        }
+    }
+    enough(item_name,amount) {
+        return this.getAmount(item_name) >= amount;
+    }
+    setAmount(item_name, amount) {
+        if (this.map[item_name] != null) {
+            this.map[item_name] = amount;
+        } else {
+            console.log("ERROR: '" + item_name + "' is not a valid item name.");
+        }
+    }
+    addAmount(item_name, amount) {
+        if (this.map[item_name] != null) {
+            this.map[item_name] += amount;
+        } else {
+            console.log("ERROR: '" + item_name + "' is not a valid item name.");
+        }
     }
 }
 
