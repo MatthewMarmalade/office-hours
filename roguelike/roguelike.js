@@ -34,7 +34,7 @@ const large_blank = '\
 |                                                             |\n\
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n';
 
-const sixteen_blank = '\
+const sixteen_blank_map = '\
   ______________________________  \n\
  |                              | \n\
  |                              | \n\
@@ -42,7 +42,7 @@ const sixteen_blank = '\
  |                              | \n\
  |                              | \n\
  |                              | \n\
- |                              | \n\
+ |             ▶                | \n\
  |                              | \n\
  |                              | \n\
  |                              | \n\
@@ -53,15 +53,16 @@ const sixteen_blank = '\
  |                              | \n\
  |                              | \n\
   ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
+const sixteen_blank = toMessage('sixteen_blank', sixteen_blank_map);
 
-const sixteen_mining = '\
+const sixteen_mining_map = '\
   ______________________________  \n\
  |                              | \n\
  |       █                      | \n\
  |                          █   | \n\
  |                              | \n\
  |                              | \n\
- |                              | \n\
+ |          ▶                   | \n\
  |                    █         | \n\
  |                              | \n\
  |     █                        | \n\
@@ -73,8 +74,9 @@ const sixteen_mining = '\
  |                              | \n\
  |                              | \n\
   ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
+const sixteen_mining = toMessage('sixteen_mining', sixteen_mining_map);
 
-const small_house = '\
+const small_house_map = '\
   ________  \n\
  |████████| \n\
  |██░░░░██| \n\
@@ -92,7 +94,7 @@ const large_dungeon_map = '\
 |                |                        |                   |\n\
 |        _____   |                  |▔▔▔▔▔                    |\n\
 |       |     |__|                  |                         |\n\
-|       |  @                        |                         |\n\
+|       |  ▶                        |                         |\n\
 |       |     |▔▔|                  |                         |\n\
 |        ▔▔▔▔▔   |                  |                         |\n\
 |                |                  |                         |\n\
@@ -117,6 +119,7 @@ const small_dungeon = toMessage('small_dungeon', small_dungeon_map);
 var maps = {}
 maps['small_dungeon'] = small_dungeon;
 maps['large_dungeon'] = large_dungeon;
+maps['16_blank'] = sixteen_blank;
 
 function toSecret(map) {
     const whitespace = map.split("\n").join("n").split(empty).join("e");
@@ -195,7 +198,7 @@ class Map {
             for (var j = 0; j < grid[i].length; j++) {
                 //passing over every character...
                 char = grid[i][j];
-                if (char == playerChar[3]) {
+                if (playerChar.includes(char)) {
                     this.player = new Player(j, i, char, "Unnamed Player");
                     console.log("Player '" + this.player.name + "'' Found At: (" + this.player.x + "," + this.player.y + ")");
                 }
@@ -217,11 +220,11 @@ class Map {
         const visible = this.visibleMap();
         const secret = 'name.' + this.name + '-map.' + this.gridToSecret() + '\n';
         const final = this.name + '\n' + graves + secret + visible + graves + padding;
-        console.log("Final Output: " + final);
+        //console.log("LOG: toText Complete. Characters: " + final.length);
         return final;
     }
     visibleMap() {
-        if (this.fog == null) this.fog = 3;
+        if (this.fog == null) this.fog = 5; //radius of visible square. 
         const fogX = Math.floor(this.fog * 2);           //Adjusted because char height > width
         const minY = Math.max(0,this.player.y-this.fog);
         const maxY = Math.min(this.player.y+this.fog+1,this.height);
