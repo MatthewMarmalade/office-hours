@@ -2,79 +2,83 @@ const Discord = require("discord.js");
 const config = require("./config.json");
 const bot = new Discord.Client();
 
+//TEXT VARIABLES
 const graves = '```';
 const padding = '\n\n\nControls:';
+var playerChar = {'w':'▲W','a':'◀A','s':'▼S','d':'▶D','▲W':'w','◀A':'a','▼S':'s','▶D':'d'};
+var empty = ['e','  '];		//{'b':'e','f':' '};
+var stone = ['s','██'];		//{'b':'s','f':'█'};
+var walls = ['','░░'];		//{'b':'', 'f':'░'};//'▞';//'▒';
+var nline = ['n','\n'];		//{'b':'n','f':'\n'};
+
+// var playerChar = {'w':'▲▲','a':'◀◀','s':'▼▼','d':'▶▶','▲▲':'w','◀◀':'a','▼▼':'s','▶▶':'d'};
+// const empty = ' ';
+// const stone = '██';
+// const walls = '░░';//'▞';//'▒';
+const standard_inventory = 'Actions: **100** | Pickaxe: **64** | Potatoes: **8** | Stone: **16** | Wood: **0** | Iron: **0** | ';
+
+//MESSAGE AND MAP VARIABLES
 var target = null;
 var main_map = null;
-var playerChar = {'w':'▲','a':'◀','s':'▼','d':'▶','▲':'w','◀':'a','▼':'s','▶':'d'};
-const empty = ' ';
-const stone = '█';
-const standard_inventory = 'Actions: **100** | Pickaxe: **64** | Potatoes: **8** | Stone: **0** | Wood: **0** | Iron: **0** | ';
 
-
+//MAP TEXTS
 const large_blank = '\
- _____________________________________________________________ \n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
-|                                                             |\n\
- ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n';
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n\
+                                                             \n';
 
 const sixteen_blank_map = '\
-  ______________________________  \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
- |                              | \n\
-  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n\
+                              \n';
 const sixteen_blank = toMessage('sixteen_blank', sixteen_blank_map, 6, [12], [7], ['d']);
 
 const sixteen_mining_map = '\
-  ______________________________  \n\
- |                              | \n\
- |       █                      | \n\
- |                ███       █   | \n\
- |    █          ███            | \n\
- |                              | \n\
- |                              | \n\
- |                    █         | \n\
- | █                            | \n\
- |     █          █             | \n\
- |      ██           ██         | \n\
- |               █              | \n\
- |                    █     █   | \n\
- |                         ███  | \n\
- |        █                     | \n\
- |             █      █         | \n\
- |                              | \n\
-  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔  \n';
+                              \n\
+       █                      \n\
+                ███       █   \n\
+    █          ███            \n\
+                              \n\
+                              \n\
+                    █         \n\
+ █                            \n\
+     █          █             \n\
+      ██           ██         \n\
+               █              \n\
+                    █     █   \n\
+                         ███  \n\
+        █                     \n\
+             █      █         \n\
+                              \n';
 const sixteen_mining = toMessage('sixteen_mining', sixteen_mining_map, 4, [12], [7], ['d']);
 
 const small_house_map = '\
@@ -110,12 +114,10 @@ const large_dungeon_map = '\
 const large_dungeon = toMessage('large_dungeon', large_dungeon_map, 4, [10], [10], ['d']);
 
 const small_dungeon_map = '\
- ____ \n\
-|    |\n\
-|    |\n\
-|    |\n\
- ▔▔▔▔ \n';
-const small_dungeon = toMessage('small_dungeon', small_dungeon_map, 3, [3], [2], ['d']);
+      \n\
+      \n\
+      \n';
+const small_dungeon = toMessage('small_dungeon', small_dungeon_map, 3, [2], [1], ['d']);
 
 var maps = {}
 maps['small_dungeon'] = small_dungeon;
@@ -124,18 +126,14 @@ maps['16_blank'] = sixteen_blank;
 maps['16_mining'] = sixteen_mining;
 
 function toSecret(map) {
-    const whitespace = map.split("\n").join("n").split(empty).join("e");
-    const walls = whitespace.split("|").join("v").split("▔").join("h");
-    const blocks = walls.split(stone).join("b");
-    //const players = blocks.split("▲").join("w").split("◀").join("a").split("▼").join("s").split("▶").join("d");
+    const whitespace = map.split(nline[1]).join(nline[0]).split(empty[1]).join(empty[0]);
+    const blocks = whitespace.split(stone[1]).join(stone[0]);
     return blocks;
 }
 
 function fromSecret(map) {
-    const whitespace = map.split("n").join("\n").split("e").join(empty);
-    const walls = whitespace.split("v").join("|").split("h").join("▔");
-    const blocks = walls.split("b").join(stone);
-    //const players = blocks.split("w").join("▲").split("a").join("◀").split("s").join("▼").split("d").join("▶");
+    const whitespace = map.split(nline[0]).join(nline[1]).split(empty[0]).join(empty[1]);
+    const blocks = whitespace.split(stone[0]).join(stone[1]);
     return blocks;
 }
 
@@ -195,16 +193,17 @@ class Map {
         // for (var i = 0; i < xs.length; i++) {
 
         // }
-        this.player = new Player (xs[0], ys[0], playerChar[ds[0]], "Player 1", this.inventory);
+        this.player = new Player (xs[0], ys[0], ds[0], "Player 1", this.inventory);
         
         console.log("Final Grid: " + this.grid.grid);
         console.log("MAP LOADED")
     }
     secretToGrid(secret) {
-        var rows = fromSecret(secret).split('\n');
+        //var rows = fromSecret(secret).split('\n');
+        var rows = secret.split('n');
         var char;
         var length;
-        this.height = rows.length;
+        this.height = rows.length - 1;
         this.width = rows[0].length;
         console.log("Map Height: " + this.height + ", Map Width: " + this.width);
         var grid = [];
@@ -214,15 +213,6 @@ class Map {
                 console.log("ERROR: Row " + i + " width: " + rows[i].length + " != " + this.width);
                 return;
             }
-            //console.log("Row " + i + ": " + grid[i]);
-            // for (var j = 0; j < grid[i].length; j++) {
-            //     //passing over every character...
-            //     char = grid[i][j];
-            //     if (playerChar.includes(char)) {
-            //         this.player = new Player(j, i, char, "Unnamed Player", this.inventory);
-            //         console.log("Player '" + this.player.name + "'' Found At: (" + this.player.x + "," + this.player.y + ")");
-            //     }
-            // }
         }
         return new Grid(grid, this.height, this.width);
     }
@@ -232,14 +222,14 @@ class Map {
         for (var row = 0; row < grid.length; row++) {
             rows[row] = grid[row].join('');
         }
-        var text = rows.join('\n') + '\n';
+        var text = rows.join('n') + 'n';
         //console.log("LOG: GRIDTOSECRET: " + text);
-        return toSecret(text);
+        return text;
     }
     toText() {
         //Reconstructs the map into a piece of text that can be sent using the bot.
         const visible = this.visibleMap();
-        const secret = 'name.' + this.name + '-fog.' + this.fog + '-xs.' + [this.player.x] + '-ys.' + [this.player.y] + '-ds.' + [playerChar[this.player.char]] + '-map.' + this.gridToSecret() + '\n';
+        const secret = 'name.' + this.name + '-fog.' + this.fog + '-xs.' + [this.player.x] + '-ys.' + [this.player.y] + '-ds.' + [this.player.char] + '-map.' + this.gridToSecret() + '\n';
         const final = this.name + '\n' + graves + secret + visible + graves + this.inventory.toText() + padding;
         //console.log("LOG: toText Complete: " + /*final + */"\ntoText Characters: " + final.length);
         return final;
@@ -247,25 +237,38 @@ class Map {
     visibleMap() {
         if (this.fog == null) this.fog = 5; //radius of visible square. 
         const fogX = Math.floor(this.fog * 2);           //Adjusted because char height > width
-        const minY = Math.max(0,this.player.y-this.fog);
-        const maxY = Math.min(this.player.y+this.fog+1,this.height);
-        const minX = Math.max(0,this.player.x-fogX);
-        const maxX = Math.min(this.player.x+fogX+1,this.width);
-        var rows = [];
-        var visibleRows = this.grid.grid;
-        const temp = visibleRows[this.player.y][this.player.x];
-        visibleRows[this.player.y][this.player.x] = this.player.char;
-        visibleRows = visibleRows.slice(minY, maxY);
-        for (var row = 0; row < visibleRows.length; row++) {
-            var visibleCols = visibleRows[row].slice(minX, maxX);
-            //console.log("VisibleCols: " + visibleCols);
-            rows[row] = visibleCols.join('');
+        const minY = this.player.y - this.fog;
+        const maxY = this.player.y + this.fog + 1;
+        const minX = this.player.x - fogX;
+        const maxX = this.player.x + fogX + 1;
+        var visible = [];
+        for (var gridY = minY; gridY < maxY; gridY++) {
+        	const visY = gridY - minY;
+        	visible[visY] = [];
+        	//console.log("TEST: Moved to y=" + gridY + ". Grid At This Height: " + this.grid.grid[gridY]);
+        	for (var gridX = minX; gridX < maxX; gridX++) {
+        		const visX = gridX - minX;
+        		if (gridY == this.player.y && gridX == this.player.x) {
+        			//console.log("TEST: Found Player at (" + gridX + ',' + gridY + ').');
+        			visible[visY][visX] = playerChar[this.player.char];
+        		} else if (gridX >= 0 && gridX < this.width && gridY >= 0 && gridY < this.height) {
+        			//console.log("TEST: (" + gridX + ',' + gridY + ') Within Grid.');
+        			visible[visY][visX] = this.grid.grid[gridY][gridX];
+        		} else {
+        			//console.log("TEST: (" + gridX + ',' + gridY + ') Outside Grid, using Walls.');
+        			visible[visY][visX] = walls[1];
+        		}
+        	}
+        	visible[visY] = visible[visY].join('');
         }
-        this.grid.grid[this.player.y][this.player.x] = temp;
-        return rows.join('\n') + '\n';
+        visible = visible.join('\n') + '\n';
+        //console.log("TEST: OUTPUT OF VISIBLE MAP: ==========\n" + visible);
+        //console.log("TEST: ==========")
+        //console.log("TEST: Grid after modification: \n" + this.grid.grid);
+        return fromSecret(visible);
     }
     playerMove(dir) {
-        this.player.move(this.grid, playerChar[dir]);
+        this.player.move(this.grid, dir);
     }
     playerMine() {
         this.player.mine(this.grid);
@@ -282,14 +285,15 @@ class Grid {
         this.width = width;
     }
     getBlock(x,y) {
-        if (x >= 0 && y >= 0 && x <= this.width+1 && y <= this.height+1) {
+        if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
+        	//console.log("TEST: x:" + x + ",y:" + y + ". Width:" + this.width + ", Height:" + this.height);
             return this.grid[y][x];
         } else {
         	console.log("ERROR: x:" + x + ",y:" + y + " is invalid. Width:" + this.width + ", Height:" + this.height);
         }
     }
     setBlock(x,y,char) {
-        if (x >= 0 && y >= 0 && x <= this.width+1 && y <= this.height+1) {
+        if (x >= 0 && y >= 0 && x < this.width && y < this.height) {
             this.grid[y][x] = char;
         }
     }
@@ -311,18 +315,18 @@ class Player {
         return char == this.char;
     }
     targetX() {
-        if (this.char == playerChar['a']) {
+        if (this.char == 'a') {
             return this.x - 1;
-        } else if (this.char == playerChar['d']) {
+        } else if (this.char == 'd') {
             return this.x + 1;
         } else {
             return this.x;
         }
     }
     targetY() {
-        if (this.char == playerChar['w']) {
+        if (this.char == 'w') {
             return this.y - 1;
-        } else if (this.char == playerChar['s']) {
+        } else if (this.char == 's') {
             return this.y + 1;
         } else {
             return this.y;
@@ -332,7 +336,7 @@ class Player {
     	//console.log('TEST: Player: ' + this.name + ' Going: ' + dir);
         if (this.facing(dir)) {
         	//console.log('TEST: Target: ' + grid.getTarget(this));
-            if (grid.getTarget(this) == empty) {
+            if (grid.getTarget(this) == empty[0]) {
                 if (this.inventory.enough('Actions',1)) {
                     //grid.setTarget(this,this.char);
                     //grid.setBlock(this.x,this.y,empty);
@@ -346,9 +350,9 @@ class Player {
         }
     }
     mine(grid) {
-        if (grid.getTarget(this) == stone) {
+        if (grid.getTarget(this) == stone[0]) {
             if (this.inventory.enough('Actions',1) && this.inventory.enough('Pickaxe',1)) {
-                grid.setTarget(this, empty);
+                grid.setTarget(this, empty[0]);
                 this.inventory.addAmount('Actions',-1);
                 this.inventory.addAmount('Pickaxe',-1);
                 this.inventory.addAmount('Stone',1);
@@ -356,9 +360,9 @@ class Player {
         }
     }
     build(grid) {
-        if (grid.getTarget(this) == empty) {
+        if (grid.getTarget(this) == empty[0]) {
             if (this.inventory.enough('Actions',1) && this.inventory.enough('Stone',1)) {
-                grid.setTarget(this, stone);
+                grid.setTarget(this, stone[0]);
                 this.inventory.addAmount('Actions',-1);
                 this.inventory.addAmount('Stone',-1);
                 this.inventory.addAmount('Pickaxe',1);
@@ -435,8 +439,8 @@ bot.once('ready', () => {
     //console.log("Converted back to text:\n" + map.toText());
     //console.log(small_dungeon);
     main_map = new Map();
-    //main_map.fromText(small_dungeon);
-    //console.log("Converted back to text:\n" + main_map.toText());
+    main_map.fromText(small_dungeon);
+    console.log("Converted back to text:\n" + main_map.toText());
 })
 
 bot.on('message', message => {
