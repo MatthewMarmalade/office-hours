@@ -244,7 +244,7 @@ class Map {
     }
     visibleMap() {
         if (this.fog == null) this.fog = 5; //radius of visible square. 
-        const fogX = Math.floor(this.fog * 2);           //Adjusted because char height > width
+        const fogX = Math.floor(this.fog * 1.7);           //Adjusted because char height > width
         const minY = this.player.y - this.fog;
         const maxY = this.player.y + this.fog + 1;
         const minX = this.player.x - fogX;
