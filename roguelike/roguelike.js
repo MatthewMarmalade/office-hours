@@ -5,17 +5,20 @@ const bot = new Discord.Client();
 //TEXT VARIABLES
 const graves = '```';
 const padding = '\n\n\nControls:';
-var playerChar = {'w':'▲W','a':'◀A','s':'▼S','d':'▶D','▲W':'w','◀A':'a','▼S':'s','▶D':'d'};
+const pickaxe = 'Ͳ';
+var playerChar = {'w':'▲Ͳ','a':'Ͳ◀','s':'Ͳ▼','d':'▶Ͳ','▲Ͳ':'w','◀Ͳ':'a','Ͳ▼':'s','▶Ͳ':'d'};
 var empty = ['e','  '];		//{'b':'e','f':' '};
 var stone = ['s','██'];		//{'b':'s','f':'█'};
 var walls = ['','░░'];		//{'b':'', 'f':'░'};//'▞';//'▒';
 var nline = ['n','\n'];		//{'b':'n','f':'\n'};
+var potatoes = [['a','.‧'],['b','‧⁚'],['c','⁚⁖'],['d','⁖⁘'],['f','※⁜']];
 
+const funChars = [];
 // var playerChar = {'w':'▲▲','a':'◀◀','s':'▼▼','d':'▶▶','▲▲':'w','◀◀':'a','▼▼':'s','▶▶':'d'};
 // const empty = ' ';
 // const stone = '██';
 // const walls = '░░';//'▞';//'▒';
-const standard_inventory = 'Actions: **100** | Pickaxe: **64** | Potatoes: **8** | Stone: **16** | Wood: **0** | Iron: **0** | ';
+const standard_inventory = 'Day: **1** | Actions: **20** | Pickaxe: **64** | Potatoes: **8** | Stone: **16** | Wood: **0** | Iron: **0** | ';
 
 //MESSAGE AND MAP VARIABLES
 var target = null;
@@ -60,26 +63,26 @@ const sixteen_blank_map = '\
                               \n\
                               \n\
                               \n';
-const sixteen_blank = toMessage('sixteen_blank', sixteen_blank_map, 6, [12], [7], ['d']);
+const sixteen_blank = toMessage('sixteen_blank', sixteen_blank_map, 6, [12], [7], ['d'], [0]);
 
 const sixteen_mining_map = '\
                               \n\
-       █                      \n\
-                ███       █   \n\
-    █          ███            \n\
+        ██                    \n\
+                ██        ██  \n\
+    ██        ██              \n\
                               \n\
                               \n\
-                    █         \n\
- █                            \n\
-     █          █             \n\
-      ██           ██         \n\
-               █              \n\
-                    █     █   \n\
-                         ███  \n\
-        █                     \n\
-             █      █         \n\
+                    ██        \n\
+  ██                          \n\
+    ██          ██            \n\
+      ██          ██          \n\
+              ██              \n\
+                    ██    ██  \n\
+                        ██    \n\
+        ██                    \n\
+            ██      ██        \n\
                               \n';
-const sixteen_mining = toMessage('sixteen_mining', sixteen_mining_map, 4, [12], [7], ['d']);
+const sixteen_mining = toMessage('sixteen_mining', sixteen_mining_map, 4, [12], [7], ['d'], [0]);
 
 const small_house_map = '\
   ________  \n\
@@ -111,34 +114,36 @@ const large_dungeon_map = '\
 |                 |                               |           |\n\
 |                  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔            |\n\
  ▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔ \n';
-const large_dungeon = toMessage('large_dungeon', large_dungeon_map, 4, [10], [10], ['d']);
+//const large_dungeon = toMessage('large_dungeon', large_dungeon_map, 4, [10], [10], ['d']);
 
 const small_dungeon_map = '\
       \n\
       \n\
       \n';
-const small_dungeon = toMessage('small_dungeon', small_dungeon_map, 3, [2], [1], ['d']);
+const small_dungeon = toMessage('small_dungeon', small_dungeon_map, 3, [1], [1], ['d'], [0]);
 
 var maps = {}
 maps['small_dungeon'] = small_dungeon;
-maps['large_dungeon'] = large_dungeon;
+//maps['large_dungeon'] = large_dungeon;
 maps['16_blank'] = sixteen_blank;
 maps['16_mining'] = sixteen_mining;
 
 function toSecret(map) {
     const whitespace = map.split(nline[1]).join(nline[0]).split(empty[1]).join(empty[0]);
     const blocks = whitespace.split(stone[1]).join(stone[0]);
-    return blocks;
+    const potatoBlocks = blocks.split(potatoes[0][1]).join(potatoes[0][0]).split(potatoes[1][1]).join(potatoes[1][0]).split(potatoes[2][1]).join(potatoes[2][0]).split(potatoes[3][1]).join(potatoes[3][0]).split(potatoes[4][1]).join(potatoes[4][0]);
+    return potatoBlocks;
 }
 
 function fromSecret(map) {
     const whitespace = map.split(nline[0]).join(nline[1]).split(empty[0]).join(empty[1]);
     const blocks = whitespace.split(stone[0]).join(stone[1]);
-    return blocks;
+    const potatoBlocks = blocks.split(potatoes[0][0]).join(potatoes[0][1]).split(potatoes[1][0]).join(potatoes[1][1]).split(potatoes[2][0]).join(potatoes[2][1]).split(potatoes[3][0]).join(potatoes[3][1]).split(potatoes[4][0]).join(potatoes[4][1]);
+    return potatoBlocks;
 }
 
-function toMessage(name, map, fog, xs, ys, ds) {
-    const secret = 'name.' + name + '-fog.' + fog + '-xs.' + xs.join('.') + '-ys.' + ys.join('.') + '-ds.' + ds.join('.') + '-map.' + toSecret(map) + '\n';
+function toMessage(name, map, fog, xs, ys, ds, es) {
+    const secret = 'name.' + name + '-fog.' + fog + '-xs.' + xs.join('.') + '-ys.' + ys.join('.') + '-ds.' + ds.join('.') + '-es.' + es.join('.') + '-map.' + toSecret(map) + '\n';
     return graves + secret + graves + standard_inventory;
 }
 
@@ -162,7 +167,7 @@ class Map {
         this.inventory = new Inventory(no_graves[2]);
         this.secret = no_graves[1].split('\n')[0];
         var secrets = this.secret.split('-');
-        var xs; var ys; var ds;
+        var xs; var ys; var ds; var es;
         for (var i = 0; i < secrets.length; i++) {
             const s = secrets[i].split('.');
             const key = s.shift();
@@ -185,6 +190,9 @@ class Map {
             case 'ds':
             	console.log("Map ds: " + s);
             	ds = s; break;
+            case 'es':
+            	console.log("Map es: " + s);
+            	es = s; break;
             default:
                 console.log('ERROR: Unknown secret: ' + key + ': ' + s); break;
             }
@@ -193,7 +201,7 @@ class Map {
         // for (var i = 0; i < xs.length; i++) {
 
         // }
-        this.player = new Player (xs[0], ys[0], ds[0], "Player 1", this.inventory);
+        this.player = new Player (xs[0], ys[0], ds[0], es[0], "Player 1", this.inventory);
         
         console.log("Final Grid: " + this.grid.grid);
         console.log("MAP LOADED")
@@ -229,7 +237,7 @@ class Map {
     toText() {
         //Reconstructs the map into a piece of text that can be sent using the bot.
         const visible = this.visibleMap();
-        const secret = 'name.' + this.name + '-fog.' + this.fog + '-xs.' + [this.player.x] + '-ys.' + [this.player.y] + '-ds.' + [this.player.char] + '-map.' + this.gridToSecret() + '\n';
+        const secret = 'name.' + this.name + '-fog.' + this.fog + '-xs.' + [this.player.x] + '-ys.' + [this.player.y] + '-ds.' + [this.player.char] + '-es.' + [this.player.eaten] + '-map.' + this.gridToSecret() + '\n';
         const final = this.name + '\n' + graves + secret + visible + graves + this.inventory.toText() + padding;
         //console.log("LOG: toText Complete: " + /*final + */"\ntoText Characters: " + final.length);
         return final;
@@ -276,6 +284,15 @@ class Map {
     playerBuild() {
         this.player.build(this.grid);
     }
+    playerEat() {
+    	this.player.eat();
+    }
+    playerPlant() {
+    	this.player.plant(this.grid);
+    }
+    playerSleep() {
+    	this.player.sleep(this.grid);
+    }
 }
 
 class Grid {
@@ -305,11 +322,30 @@ class Grid {
         const x = player.targetX(); const y = player.targetY();
         this.setBlock(x, y, char);
     }
+    advanceDay() {
+    	var row;
+    	for (var y = 0; y < this.grid.length; y++) {
+    		row = this.grid[y];
+    		for (var x = 0; x < row.length; x++) {
+    			if (Math.random() > 0.25){
+	    			switch (row[x]) {
+	    				case potatoes[0][0]: row[x] = potatoes[1][0]; break;
+	    				case potatoes[1][0]: row[x] = potatoes[2][0]; break;
+	    				case potatoes[2][0]: row[x] = potatoes[3][0]; break;
+	    				case potatoes[3][0]: row[x] = potatoes[4][0]; break;
+	    				default: break;
+	    			}
+	    		}
+    		}
+    	}
+    }
 }
 
 class Player {
-    constructor(x, y, char, name, inventory) {
+    constructor(x, y, char, eaten, name, inventory) {
         this.x = Number(x); this.y = Number(y); this.char = char; this.name = name; this.inventory = inventory;
+        this.eaten = Number(eaten);
+        //console.log("New Player: EATEN: " + eaten);
     }
     facing(char) {
         return char == this.char;
@@ -336,26 +372,48 @@ class Player {
     	//console.log('TEST: Player: ' + this.name + ' Going: ' + dir);
         if (this.facing(dir)) {
         	//console.log('TEST: Target: ' + grid.getTarget(this));
-            if (grid.getTarget(this) == empty[0]) {
+        	const target = grid.getTarget(this);
+            if (target == empty[0]) {
                 if (this.inventory.enough('Actions',1)) {
                     //grid.setTarget(this,this.char);
                     //grid.setBlock(this.x,this.y,empty);
                     this.x = this.targetX(); this.y = this.targetY();
                     this.inventory.addAmount('Actions',-1);
                 }
-            }
+            } else if (target == potatoes[0][0] || target == potatoes[1][0] || target == potatoes[2][0] || target == potatoes[3][0] || target == potatoes[4][0]) {
+	        	if (this.inventory.enough('Actions',1)) {
+	        		grid.setTarget(this,potatoes[0][0]);
+	        		this.x = this.targetX(); this.y = this.targetY();
+	        		this.inventory.addAmount('Actions',-1);
+	        	}
+	        }
         } else {
             this.char = dir;
             //grid.setBlock(this.x,this.y,dir);
         }
     }
     mine(grid) {
-        if (grid.getTarget(this) == stone[0]) {
+    	const target = grid.getTarget(this);
+        if (target == stone[0]) {
             if (this.inventory.enough('Actions',1) && this.inventory.enough('Pickaxe',1)) {
                 grid.setTarget(this, empty[0]);
                 this.inventory.addAmount('Actions',-1);
                 this.inventory.addAmount('Pickaxe',-1);
                 this.inventory.addAmount('Stone',1);
+            }
+        } else if (target == potatoes[0][0] || target == potatoes[1][0] || target == potatoes[2][0] || target == potatoes[3][0]) {
+        	if (this.inventory.enough('Actions',1) && this.inventory.enough('Pickaxe',1)) {
+                grid.setTarget(this, empty[0]);
+                this.inventory.addAmount('Actions',-1);
+                this.inventory.addAmount('Pickaxe',-1);
+                this.inventory.addAmount('Potatoes',1);
+            }
+        } else if (target == potatoes[4][0]) {
+        	if (this.inventory.enough('Actions',1) && this.inventory.enough('Pickaxe',1)) {
+                grid.setTarget(this, empty[0]);
+                this.inventory.addAmount('Actions',-1);
+                this.inventory.addAmount('Pickaxe',-1);
+                this.inventory.addAmount('Potatoes',3+Math.floor((Math.random()*4)));
             }
         }
     }
@@ -365,9 +423,38 @@ class Player {
                 grid.setTarget(this, stone[0]);
                 this.inventory.addAmount('Actions',-1);
                 this.inventory.addAmount('Stone',-1);
-                this.inventory.addAmount('Pickaxe',1);
+                //this.inventory.addAmount('Pickaxe',1);
             }
         }
+    }
+    plant(grid) {
+    	const target = grid.getTarget(this);
+    	if (target == empty[0]) {
+    		if (this.inventory.enough('Actions',1) && this.inventory.enough('Potatoes',1)) {
+    			grid.setTarget(this, potatoes[0][0]);
+    			this.inventory.addAmount('Actions',-1);
+                this.inventory.addAmount('Potatoes',-1);
+    		}
+    	} else if (target == potatoes[4][0]) {
+    		if (this.inventory.enough('Actions',1)) {
+    			this.mine(grid);
+    			this.plant(grid);
+    		}
+    	}
+    }
+    sleep(grid) {
+    	if (grid.getBlock(this.x, this.y) == empty[0]) {
+    		this.inventory.addAmount('Day',1);
+    		this.inventory.setAmount('Actions',20+this.eaten);
+    	}
+    	grid.advanceDay();
+    }
+    eat() {
+    	if (this.inventory.enough('Potatoes',1)) {
+    		this.inventory.addAmount('Actions',1);
+    		this.inventory.addAmount('Potatoes',-1);
+    		this.eaten += 1;
+    	}
     }
 }
 
@@ -439,8 +526,8 @@ bot.once('ready', () => {
     //console.log("Converted back to text:\n" + map.toText());
     //console.log(small_dungeon);
     main_map = new Map();
-    main_map.fromText(small_dungeon);
-    console.log("Converted back to text:\n" + main_map.toText());
+    //main_map.fromText(small_dungeon);
+    //console.log("Converted back to text:\n" + main_map.toText());
 })
 
 bot.on('message', message => {
@@ -472,11 +559,14 @@ bot.on('message', message => {
                 channel.send(main_map.toText())
                     .then(map => target = map)
                     .then(() => target.react('⬆'))
-                    .then(() => target.react('⬇️'))
-                    .then(() => target.react('⬅️'))
+                    .then(() => target.react('⬇'))
+                    .then(() => target.react('⬅'))
                     .then(() => target.react('➡'))
-                    .then(() => target.react('⛏️'))
-                    .then(() => target.react('◼️'))
+                    .then(() => target.react('⛏'))
+                    .then(() => target.react('◼'))
+                    .then(() => target.react('🌱'))
+                    .then(() => target.react('🛏'))
+                    .then(() => target.react('🥔'))
                     .then(() => console.log("New Map: " + main_map.name))
                     .catch(console.error);
             }
@@ -559,11 +649,14 @@ bot.on('messageReactionAdd', (reaction, user) => {
         }
         switch (reaction._emoji.name) {
             case '⬆': main_map.playerMove('w'); break;
-            case '⬅️': main_map.playerMove('a'); break;
-            case '⬇️': main_map.playerMove('s'); break;
+            case '⬅': main_map.playerMove('a'); break;
+            case '⬇': main_map.playerMove('s'); break;
             case '➡': main_map.playerMove('d'); break;
-            case '⛏️': main_map.playerMine(); break;
-            case '◼️': main_map.playerBuild(); break;
+            case '⛏': main_map.playerMine(); break;
+            case '◼': main_map.playerBuild(); break;
+            case '🥔': main_map.playerEat(); break;
+            case '🌱': main_map.playerPlant(); break;
+            case '🛏': main_map.playerSleep(); break;
             default:
                 console.log("ERROR: Unknown Reaction: " + reaction._emoji.name); break;
         }
